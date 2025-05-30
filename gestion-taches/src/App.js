@@ -1,10 +1,17 @@
 import './App.css';
 import React from 'react';
 import {useState} from 'react';
+import FormulaireTache from './composants/FormulaireTache';
+import TacheItem from './composants/TacheItem';
+import { useEffect } from 'react';
+import tacheTerminee from './composants/TacheTerminee';
 
 function App() {
-  // 1️⃣ Liste de tâches (données simulées pour commencer)
-  const [taches, setTaches] = useState([]);
+
+  const [taches, setTaches] = useState(() => {
+    const tachesSauvegardees = localStorage.getItem("mesTaches");
+    return tachesSauvegardees ? JSON.parse(tachesSauvegardees) : [];
+  });
   const [nouvelleTache, setNouvelleTache] = useState('');
   const [idModifier, setIdModifier] = useState(null);
   const [DateTache, setDateTache] = useState('');
@@ -14,7 +21,8 @@ function App() {
     const new_tache = { 
       id: crypto.randomUUID(), // Génère un ID unique
       text: nouvelleTache.trim(), // Enlève les espaces inutiles 
-      date: DateTache
+      date: DateTache,
+      terminee : false 
     }
     setTaches([...taches,new_tache]);
     setNouvelleTache('');
@@ -36,77 +44,53 @@ function App() {
     
   }
 
-const formatDate = (dateStr) => {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+  const EnregistrerModif = (id) => {
+    const nouvellesTaches = taches.map(t => t.id === id ? { ...t, text: nouvelleTache, date: DateTache } : t );
+    setTaches(nouvellesTaches);
+    setIdModifier(null);
+    setNouvelleTache('');
+    setDateTache('');
+  };
 
+  const tacheTerminee = (id) => {
+    const nouvellesTaches = taches.map( t => t.id === id ? { ...t, terminee: !t.terminee} : t );
+    setTaches(nouvellesTaches);
+  }
+
+  useEffect(() => {
+  localStorage.setItem("mesTaches", JSON.stringify(taches));
+  }, [taches]);
   
   return (
 
     <div style={{ padding: '20px' }}> 
       <h1> Gestionnaire de Tâches </h1>
-      <input
-        type="text"
-        value={nouvelleTache}
-        onChange={(e) => setNouvelleTache(e.target.value)}
-        placeholder="Nouvelle tâche"
+      <FormulaireTache
+      nouvelleTache={nouvelleTache}
+      setNouvelleTache={setNouvelleTache}
+      DateTache={DateTache}
+      setDateTache={setDateTache}
+      ajouterTache={ajouterTache}
       />
 
-      <input 
-        type='Date'
-        value={DateTache}
-        onChange={(e) => setDateTache(e.target.value)} 
-        style = {{marginLeft: '10px'}}/>
-       
+      <ul>
 
+        {[...taches].sort((a, b) => new Date(a.date) - new Date(b.date)).map((tache) => (
+          <TacheItem 
+          key={tache.id}
+          tache={tache}
+          onSupprimer={supprimerTache}
+          onModifier={modifierTache}
+          idModifier={idModifier}
+          setNouvelleTache={setNouvelleTache}
+          setDateTache={setDateTache}
+          setIdModifier={setIdModifier}
+          enregistrerModification= {EnregistrerModif}
+          tacheTerminee={tacheTerminee}
+           />
 
-      <button onClick={ajouterTache} style ={{marginLeft : '10px'}}> 
-        Ajouter 
-      </button>
-    <ul>
-
-  {[...taches].sort((a, b) => new Date(a.date) - new Date(b.date)).map((tache) => (
-    <li key={tache.id}> 
-    
-      {idModifier === tache.id ? (
-        <>
-          <input
-            type="text"
-            value={nouvelleTache}
-            onChange={(e) => setNouvelleTache(e.target.value)}
-          />
-
-
-          <button onClick={() => {
-              const nouvellesTaches = taches.map((t) =>
-                t.id === tache.id ? { ...t, text: nouvelleTache , date: DateTache } : t);
-              setTaches(nouvellesTaches);
-              setIdModifier(null);
-              setNouvelleTache('');
-            }}
-            style={{ marginLeft: '10px' }}>
-            Enregistrer
-          </button>
-        </>
-      ) : (
-        <>
-          {tache.text}
-          <span style={{marginLeft:'10px'}}>
-          {tache.date ? formatDate(tache.date) : "pas de Date"}
-          </span>
-
-          <button onClick={() => supprimerTache(tache.id)} style={{ marginLeft: '10px' }}>
-            Supprimer
-          </button>
-          <button onClick={() => modifierTache(tache.id)} style={{ marginLeft: '10px' }}>
-            Modifier
-          </button>
-        </>
-      )}
-    </li>
-  ))}
-</ul>
+        ))}
+      </ul>
 
     </div>
     
