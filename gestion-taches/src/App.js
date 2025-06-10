@@ -87,6 +87,7 @@ function App() {
           setIdModifier={setIdModifier}
           enregistrerModification= {EnregistrerModif}
           tacheTerminee={tacheTerminee}
+          
            />
 
         ))}
